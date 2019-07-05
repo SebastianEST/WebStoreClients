@@ -21,4 +21,7 @@ Route::get('/client', 'RequestController@getClient');
 
 Route::post('/client', 'RequestController@getClient');
 
+Route::get('/users/connectuser', 'UserController@connectUser');
+
 Route::resource('/users', 'UserController');
+
