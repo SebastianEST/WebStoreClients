@@ -13,7 +13,6 @@ class RequestController extends Controller
         }
 
         public function getClient(Request $request) {
-
             if(strlen($request->input('client') < 3)) {
                 return view('client')->with('error', 'Puuduvad andmed');
             }
@@ -28,7 +27,9 @@ class RequestController extends Controller
                 ->join('customer_address_entity as billingadr', 'cust.default_billing', '=', 'billingadr.entity_id')
                 ->join('customer_address_entity as shippingadr', 'cust.default_shipping', '=', 'shippingadr.entity_id')
                 ->where('ax_code', $request->input('client'))->get();
-            //dd($data);
+            if(sizeof($data) < 1) {
+                return \Redirect::to("/client")->withWarning( 'Klienti ei leitud!' );
+            }
             $users = $this->getUsers($request->input('client'));
             $axusers = AxController::GetContacts($request->input('client'));
             $addresses = $this->getAddresses($request->input('client'));

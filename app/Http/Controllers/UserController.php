@@ -35,13 +35,14 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        //dd($request);
 
         $request->validate([
             'email' => 'email|unique:mysql.b2b_authorized_person,email',
             'username' => 'email|unique:mysql.b2b_authorized_person,username',
             'firstname' => 'min:2|string',
             'lastname' => 'min:2|string',
-            'password' => 'min:5'
+            'password' => 'min:8'
         ]);
 
         //dd($request->input());
@@ -64,8 +65,10 @@ class UserController extends Controller
 
 
         ]);
+        $adm = ($request->input('admin') === 'on') ? 1 : 0;
 
         $this->createLink($userid, $request->input('client'));
+        $this->setAdmAndRole($userid, $request->input('client'), $adm, $request->input('role'));
         //return redirect("/client?client=" .$request->input('client'));
         return \Redirect::to("/client?client=" .$request->input('client'))->withSuccess( 'Kasutaja edukalt lisatud!' );
 
@@ -93,7 +96,7 @@ class UserController extends Controller
     public function edit($id)
     {
         //dd($this->getUserData($id));
-        return view('edituser')->with('user', $this->getUserData($id));
+        return view('edituser')->with('webuser', $this->getUserData($id));
     }
 
     /**
@@ -109,11 +112,11 @@ class UserController extends Controller
                 ->where('email', $request->input('email'))
                 ->first();
             $this->createLink($userid->id, $request->input('client'));
-            //return redirect("/client?client=" .$request->input('client')."&success=1"); Täiesti kasutu, alumine on parem
+            //return redirect("/client?client=" .$request->input('client'))->withSuccess( 'Kasutaja edukalt seotud!' ); //Täiesti kasutu, alumine on parem
             return \Redirect::back()->withSuccess( 'Kasutaja edukalt seotud!' );
         }
         //dd($request->input());
-        return view('connectuser')->with('user', AxController::getContact($request->input('user')));
+        return view('connectuser')->with('webuser', AxController::getContact($request->input('webuser')));
     }
 
 
@@ -128,12 +131,22 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         //dd($request->input());
+        if(strlen($request->input('password')) !== 0) {
+            $request->validate([
+                'password' => 'min:8'
+            ]);
+
+            DB::connection('mysql')->table('b2b_authorized_person')
+                ->where('id', $id)
+                ->update(array(
+                    'password' => $this->getPassword($request->input('password'))));
+        }
+        //dd($request->input());
         $request->validate([
             'firstname' => 'min:2|required',
             'lastname' => 'min:2|required',
             'email' => 'min:3|required|email',
-            'username' => 'min:3|required|email',
-            'personal_id' => 'min:3|required|numeric',
+            'username' => 'min:3|required|email'
 
         ]);
         DB::connection('mysql')->table('b2b_authorized_person')
@@ -142,8 +155,12 @@ class UserController extends Controller
                 'lastname' => $request->input('lastname'),
                 'email' => $request->input('email'),
                 'username' => $request->input('username'),
-                'personal_id' => $request->input('personal_id')));
+                'personal_id' => $request->input('personal_id'),
+                'password' => $this->getPassword($request->input('password'))));
 
+        $adm = ($request->input('admin') === 'on') ? 1 : 0;
+
+        $this->setAdmAndRole($id, $request->input('client'), $adm, $request->input('role'));
         //return redirect("/client?client=" .$request->input('client'));
         return \Redirect::to("/client?client=" .$request->input('client'))->withSuccess( 'Kasutaja andmed edukalt uuendatud!' );
     }
@@ -161,11 +178,11 @@ class UserController extends Controller
 
     public function getUserData($id) {
          $data = DB::connection('mysql')->table('b2b_authorized_person as auth1')
-            ->select('auth1.id','auth1.email', 'auth1.firstname', 'auth1.lastname', 'auth1.personal_id', 'auth1.username', 'role.name', 'auth2.admin')
+            ->select('auth1.id','auth1.email', 'auth1.firstname', 'auth1.lastname', 'auth1.personal_id', 'auth1.username', 'role.name', 'auth2.admin', 'auth2.global_role_id')
              ->join('b2b_customer_authorized_person as auth2', 'auth1.id', 'auth2.authorized_person_id')
              ->join('b2b_global_role as role', 'auth2.global_role_id','role.id')
              ->where('auth1.id', '=', $id)
-            ->get();
+            ->first();
          //dd($data);
          return $data;
 
@@ -176,7 +193,7 @@ class UserController extends Controller
         //dd($str[0]->id);
     }
 
-    //Link between user and company
+    //Link between webuser and company
     private function createLink($user, $comp) {
         DB::connection('mysql')->table('b2b_customer_authorized_person')->insert([
             'b2b_customer_id' => $this->getCompId($comp),
@@ -186,13 +203,24 @@ class UserController extends Controller
             'global_role_id' => 1
         ]);
     }
+    //Set roles and admin status
+    private function setAdmAndRole($user, $comp, $adm, $role) {
+        DB::connection('mysql')->table('b2b_customer_authorized_person')
+            ->where('b2b_customer_id', '=', $this->getCompId($comp))
+            ->where('authorized_person_id', '=', $user)
+            ->update([
+            'admin' => $adm,
+            'global_role_id' => $role
+        ]);
+
+    }
 
     //Create correct password for magento
     private function getPassword($pass) {
         return hash('SHA256', $pass);
     }
 
-    //Check if user is already in db
+    //Check if webuser is already in db
     public static function ifPersExistsInComp($email, $client) {
         $ret = DB::connection('mysql')->table('b2b_authorized_person as auth1')
             ->join('b2b_customer_authorized_person as auth2', 'auth1.id', 'auth2.authorized_person_id')
@@ -207,7 +235,7 @@ class UserController extends Controller
         return false;
     }
 
-    //Check if user is already in db
+    //Check if webuser is already in db
     public static function ifPersExists($email) {
         $ret = DB::connection('mysql')->table('b2b_authorized_person as auth1')
             ->where('auth1.email', $email)

@@ -25,3 +25,8 @@ Route::get('/users/connectuser', 'UserController@connectUser');
 
 Route::resource('/users', 'UserController');
 
+
+#for queries by webuser
+Route::get('/usr', 'WebUserController@index');
+
+Route::post('/usr', 'WebUserController@getUsers');

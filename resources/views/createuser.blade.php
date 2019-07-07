@@ -34,10 +34,23 @@
             </div>
             <div class="form-group">
                 <label for="">Parool: </label>
-                <input type="password" class="form-control" name="password" placeholder="Parool"autocomplete="off">
+                <input type="password" class="form-control" name="password" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="role">Roll (Ärge muutke kui ei ole tel/kin süsteemi):</label>
+                <select class="form-control" id="role" name="role">
+                    <option value="1">Ostja</option>
+                    <option value="2">Tellija</option>
+                    <option value="3">Kinnitaja</option>
+                </select>
+            <div class="form-group">
+                <label for="personal_id">Admin: </label>
+                <input type="checkbox" class="form-check" name="admin" autocomplete="off" checked>
             </div>
             <input type="hidden" name="client" value={{ app('request')->input('client') }}>
             <button type="submit" class="btn btn-outline-success my-2 my-sm-0 float-right" name="change">Lisa uus kasutaja</button>
+            <a href="{{ url()->previous() }}" class="btn btn-outline-success my-2 my-sm-0 float-left">Tagasi</a>
+            </div>
         </form>
     </div>
 

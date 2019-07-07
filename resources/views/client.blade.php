@@ -17,7 +17,9 @@
         </div>
 
 @elseif( Session::has( 'warning' ))
-    {{ Session::get( 'warning' ) }} <!-- here to 'withWarning()' -->
+        <div class="alert alert-warning">
+            <strong>{{ Session::get( 'warning' ) }}</strong>
+        </div>
     @endif
     @if(isset($data))
     <div class="row">
@@ -140,7 +142,12 @@
                     @foreach($axusers as $axuser)
                         <tr>
                             <td>
-                                <strong>Email: </strong>{{$axuser->locator}}<br> <strong>Nimi:</strong> {{$axuser->firstname . " " .$axuser->lastname }}</td>
+                                <strong>Email: </strong>{{$axuser->locator}}
+                                <br>
+                                <strong>Nimi:</strong> {{$axuser->firstname . " " .$axuser->lastname }}
+                                <br>
+                                <strong>Roll:</strong> {{$axuser->function_ }}
+                            </td>
                             @if($axuser->web === 1)
                                 <td>
                                     <a href="/users/connectuser?user={{$axuser->recid}}&email={{$axuser->locator}}&client={{ $data[0]->ax_code }}"><button class="btn btn-outline-success my-2 my-sm-0">Lisa</button></a>
@@ -148,6 +155,10 @@
                             @elseif($axuser->web === 2)
                                 <td>
                                     <a href="/users/connectuser?user={{$axuser->recid}}&email={{$axuser->locator}}&client={{ $data[0]->ax_code }}"><button class="btn btn-outline-success my-2 my-sm-0">Seo</button></a>
+                                </td>
+                            @elseif($axuser->web === 3)
+                                <td>
+                                    <a href=""><button class="btn btn-outline-danger my-2 my-sm-0" disabled>Viga</button></a>
                                 </td>
                             @else
                                 <td>
